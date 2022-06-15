@@ -1,15 +1,22 @@
-﻿namespace System.Containers;
+﻿using System.Text.Json.Nodes;
+
+namespace System.Containers;
 
 public class Image
 {
-    public int schemaVersion { get; set; }
-    public Descriptor Config { get; set; }
-    public Descriptor[] Layers { get; set; }
-}
+    private JsonNode manifest;
+    private JsonNode config;
 
-    public class Config
+    private List<Layer> newLayers = new();
+
+    public Image(JsonNode manifest, JsonNode config)
     {
-        public string? mediaType { get; set; }
-        public int size { get; set; }
-        public string digest { get; set; }
+        this.manifest = manifest;
+        this.config = config;
     }
+
+    void AddLayer(Layer l)
+    {
+        newLayers.Add(l);
+    }
+}

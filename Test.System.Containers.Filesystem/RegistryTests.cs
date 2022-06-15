@@ -15,6 +15,6 @@ public class RegistryTests
     {
         Registry registry = new Registry(new Uri("http://localhost:5000"));
 
-        await registry.GetImageManifest("dotnet/sdk", "6.0");
+        var x = await registry.GetImageManifest("dotnet/sdk", "6.0");
     }
 }
