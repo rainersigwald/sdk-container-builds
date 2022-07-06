@@ -125,7 +125,10 @@ public record struct Registry(Uri BaseUri)
         {
             try
             {
-                string digest = layerJson["digest"].ToString();
+                JsonNode? layerValue = JsonValue.Parse(layerJson.ToJsonString());
+
+                JsonNode? digestNode = layerValue["digest"];
+                string digest = digestNode.ToString();
                 HttpResponseMessage pushResponse = await client.PostAsync(new Uri(BaseUri, $"/v2/{name}/blobs/uploads/?mount={digest}&from={"dotnet/sdk" /* TODO */}"), content: null);
             }
             catch { }
