@@ -91,7 +91,7 @@ public record struct Registry(Uri BaseUri)
             StreamContent content = new StreamContent(contents);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
             content.Headers.ContentLength = contents.Length;
-            HttpResponseMessage putResponse = await client.PatchAsync(x.Uri, content);
+            HttpResponseMessage putResponse = await client.PutAsync(x.Uri, content);
 
             putResponse.Content.ToString();
 
