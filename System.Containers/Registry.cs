@@ -134,6 +134,23 @@ public record struct Registry(Uri BaseUri)
 
             // Blob wasn't there; can we tell the server to get it from the base image?
             HttpResponseMessage pushResponse = await client.PostAsync(new Uri(BaseUri, $"/v2/{name}/blobs/uploads/?mount={digest}&from={"dotnet/sdk" /* TODO */}"), content: null);
+
+            if (!pushResponse.IsSuccessStatusCode)
+            {
+                // The blob wasn't already available in another namespace, so fall back to explicitly uploading it
+
+                // TODO: don't do this search, which is ridiculous
+                foreach (Layer layer in x.newLayers)
+                {
+                    if (layer.Descriptor.Digest == digest)
+                    {
+                        await Push(layer, name);
+                        break;
+                    }
+
+                    throw new NotImplementedException("Need to push a layer but it's not a new one--need to download it from the base registry and upload it");
+                }
+            }
         }
 
         HttpResponseMessage configResponse = await client.PostAsync(new Uri(BaseUri, $"/v2/{name}/blobs/uploads/?mount={x.manifest["config"]["digest"]}&from={"dotnet/sdk" /* TODO */}"), content: null);
