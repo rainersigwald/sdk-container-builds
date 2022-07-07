@@ -1,6 +1,7 @@
 using Microsoft.VisualBasic;
 
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -135,7 +136,7 @@ public record struct Registry(Uri BaseUri)
             // Blob wasn't there; can we tell the server to get it from the base image?
             HttpResponseMessage pushResponse = await client.PostAsync(new Uri(BaseUri, $"/v2/{name}/blobs/uploads/?mount={digest}&from={"dotnet/sdk" /* TODO */}"), content: null);
 
-            if (!pushResponse.IsSuccessStatusCode)
+            if (pushResponse.StatusCode != HttpStatusCode.Created)
             {
                 // The blob wasn't already available in another namespace, so fall back to explicitly uploading it
 
