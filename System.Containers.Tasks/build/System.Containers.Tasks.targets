@@ -1,5 +1,5 @@
 <Project>
-    <UsingTask TaskName="CreateNewImage" AssemblyFile="../bin/Debug/net7.0/System.Containers.Tasks.dll" />
+    <UsingTask TaskName="CreateNewImage" AssemblyName="System.Containers.Tasks" />
 
     <PropertyGroup>
         <TargetFrameworkVersion>6.0</TargetFrameworkVersion>

@@ -12,11 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\System.Containers\System.Containers.csproj" />
+    <ProjectReference Include="..\System.Containers\System.Containers.csproj" PrivateAssets="all" target="lib/net7.0"/>
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="build\containers.targets" PackagePath="build"  />
+    <None Include="build\System.Containers.Tasks.targets" Pack="true" PackagePath="build"  />
   </ItemGroup>
 
   <!-- Hacky workaround for the fact that we don't publish the package yet. -->
