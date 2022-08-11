@@ -67,6 +67,13 @@ public class CreateNewImage : Microsoft.Build.Utilities.Task
     public ITaskItem[] EntrypointArgs { get; set; }
 
     /// <summary>
+    /// Ports that the application declares that it will use.
+    /// Note that this means nothing to container hosts, by default - 
+    /// it's mostly documentation.
+    /// </summary>
+    public ITaskItem[] ExposedPorts { get; set; }
+
+    /// <summary>
     /// Labels that the image configuration will include in metadata
     /// </summary>
     public ITaskItem[] Labels { get; set; }
@@ -84,6 +91,7 @@ public class CreateNewImage : Microsoft.Build.Utilities.Task
         Entrypoint = Array.Empty<ITaskItem>();
         EntrypointArgs = Array.Empty<ITaskItem>();
         Labels = Array.Empty<ITaskItem>();
+        ExposedPorts = Array.Empty<ITaskItem>();
     }
 
 
@@ -112,7 +120,7 @@ public class CreateNewImage : Microsoft.Build.Utilities.Task
         {
             Log.LogMessage($"Loading from directory: {PublishDirectory}");
         }
-        
+
         Layer newLayer = Layer.FromDirectory(PublishDirectory, WorkingDirectory);
         image.AddLayer(newLayer);
         image.WorkingDirectory = WorkingDirectory;
@@ -123,6 +131,14 @@ public class CreateNewImage : Microsoft.Build.Utilities.Task
             image.Label(label.ItemSpec, label.GetMetadata("Value"));
         }
         
+        foreach (var port in ExposedPorts)
+        {
+            if (int.TryParse(port.ItemSpec, out int portNumber) && port.GetMetadata("Type") is { } portType && Enum.TryParse<PortType>(portType, out var parsedPortType))
+            {
+                image.ExposePort(portNumber, parsedPortType);
+            }
+        }
+
         if (OutputRegistry.StartsWith("docker://"))
         {
             try
