@@ -60,7 +60,8 @@ public class Image
         var history = new JsonObject();
         history["created"] = DateTime.UtcNow;
         history["author"] = ".NET SDK";
-        history["Command"] = "dotnet publish -p:PublishProfile=DefaultContainer";
+        history["created_by"] = "dotnet publish -p:PublishProfile=DefaultContainer";
+        history["comment"] = "A dynamically-generated image layer from the .NET SDK";
         config["history"]!.AsArray().Add(history);
         RecalculateDigest();
     }
