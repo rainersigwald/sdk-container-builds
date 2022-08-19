@@ -57,6 +57,11 @@ public class Image
         newLayers.Add(l);
         manifest["layers"]!.AsArray().Add(l.Descriptor);
         config["rootfs"]!["diff_ids"]!.AsArray().Add(l.Descriptor.Digest); // TODO: this should be the descriptor of the UNCOMPRESSED tarball (once we turn on compression)
+        var history = new JsonObject();
+        history["created"] = DateTime.UtcNow;
+        history["author"] = ".NET SDK";
+        history["Command"] = "dotnet publish -p:PublishProfile=DefaultContainer";
+        config["history"]!.AsArray().Add(history);
         RecalculateDigest();
     }
 
