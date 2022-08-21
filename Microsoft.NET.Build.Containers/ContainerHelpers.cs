@@ -154,6 +154,6 @@ public static class ContainerHelpers
                 _ => null
             };
         port = p;
-        return p == null;
+        return p != null;
     }
 }
