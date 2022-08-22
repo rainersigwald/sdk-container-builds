@@ -78,6 +78,8 @@ public class CreateNewImage : Microsoft.Build.Utilities.Task
     /// </summary>
     public ITaskItem[] Labels { get; set; }
 
+    private bool IsDockerPush { get => OutputRegistry == "docker://"; }
+
     public CreateNewImage()
     {
         BaseRegistry = "";
@@ -94,6 +96,53 @@ public class CreateNewImage : Microsoft.Build.Utilities.Task
         ExposedPorts = Array.Empty<ITaskItem>();
     }
 
+    private void SetPorts(Image image, ITaskItem[] exposedPorts)
+    {
+        foreach (var port in exposedPorts)
+        {
+            var portNo = port.ItemSpec;
+            var portTy = port.GetMetadata("Type");
+            var parsePortResult = ContainerHelpers.ParsePort(portNo, portTy);
+            if (!parsePortResult.success)
+            {
+                ContainerHelpers.ParsePortError errors = (ContainerHelpers.ParsePortError)parsePortResult.parseErrors!;
+                var portString = portTy == null ? portNo : $"{portNo}/{portTy}";
+                if (errors.HasFlag(ContainerHelpers.ParsePortError.MissingPortNumber))
+                {
+                    Log.LogError("A ContainerPort item was provided without an Include metadata specifying the port number. Please provide a ContainerPort item with an ItemSpec: <ContainerPort Include=\"80\" />");
+                }
+                else
+                {
+                    var message = "A ContainerPort item was provided with ";
+                    var arguments = new List<string>(2);
+                    if (errors.HasFlag(ContainerHelpers.ParsePortError.InvalidPortNumber) && errors.HasFlag(ContainerHelpers.ParsePortError.InvalidPortNumber))
+                    {
+                        message += "an invalid port number '{0}' and an invalid port type '{1}'";
+                        arguments.Add(portNo);
+                        arguments.Add(portTy!);
+                    }
+                    else if (errors.HasFlag(ContainerHelpers.ParsePortError.InvalidPortNumber))
+                    {
+                        message += "an invalid port number '{0}'";
+                        arguments.Add(portNo);
+                    }
+                    else if (errors.HasFlag(ContainerHelpers.ParsePortError.InvalidPortNumber))
+                    {
+                        message += "an invalid port type '{0}'";
+                        arguments.Add(portTy!);
+                    }
+                    message += ". ContainerPort items must have an Include value that is an integer, and a Type value that is either 'tcp' or 'udp'";
+
+                    Log.LogError(message, arguments);
+                }
+            }
+            else
+            {
+                image.ExposePort(parsePortResult.port!.number, parsePortResult.port.type);
+            }
+        }
+
+    }
 
     public override bool Execute()
     {
@@ -131,17 +180,15 @@ public class CreateNewImage : Microsoft.Build.Utilities.Task
             image.Label(label.ItemSpec, label.GetMetadata("Value"));
         }
 
-        foreach (var port in ExposedPorts)
+        SetPorts(image, ExposedPorts);
+
+        // at the end of this step, if any failed then bail out.
+        if (Log.HasLoggedErrors)
         {
-            if (int.TryParse(port.ItemSpec, out int portNumber)
-                && port.GetMetadata("Type") is { } portType
-                && Enum.TryParse<PortType>(portType, out var parsedPortType))
-            {
-                image.ExposePort(portNumber, parsedPortType);
-            }
+            return false;
         }
 
-        if (OutputRegistry.StartsWith("docker://"))
+        if (IsDockerPush)
         {
             try
             {
@@ -172,7 +219,14 @@ public class CreateNewImage : Microsoft.Build.Utilities.Task
 
         if (BuildEngine != null)
         {
-            Log.LogMessage(MessageImportance.High, "Pushed container '{0}:{1}' to registry '{2}'", ImageName, ImageTag, OutputRegistry);
+            if (IsDockerPush)
+            {
+                Log.LogMessage(MessageImportance.High, "Pushed container '{0}:{1}' to local Docker daemon", ImageName, ImageTag);
+            }
+            else
+            {
+                Log.LogMessage(MessageImportance.High, "Pushed container '{0}:{1}' to registry '{2}'", ImageName, ImageTag, OutputRegistry);
+            }
         }
 
         return !Log.HasLoggedErrors;
