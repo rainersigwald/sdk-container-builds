@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.NET.Build.Containers;
 
@@ -8,6 +10,16 @@ public static class ContentStore
     public static string ContentRoot
     {
         get => Path.Combine(ArtifactRoot, "Content");
+    }
+
+    public static string ManifestRoot
+    {
+        get => Path.Combine(ArtifactRoot, "Manifests");
+    }
+
+    public static string BlobsRoot
+    {
+        get => Path.Combine(ArtifactRoot, "Blobs");
     }
 
     public static string TempPath
@@ -43,11 +55,14 @@ public static class ContentStore
         return GetPathForHash(contentHash) + extension;
     }
 
-
     public static string GetPathForHash(string contentHash)
     {
         return Path.Combine(ContentRoot, contentHash);
     }
+
+    public static string GetPathForManifest(string manifestName, string manifestReference) => Path.Combine(ManifestRoot, manifestName, manifestReference);
+
+    public static string GetPathForBlob(string blobName, string blobSha) => Path.Combine(BlobsRoot, blobName, blobSha);
 
     public static string GetTempFile()
     {
