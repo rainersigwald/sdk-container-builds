@@ -45,16 +45,22 @@ public record struct Registry(Uri BaseUri)
         JsonNode manifest;
         if (File.Exists(expectedManifestPath))
         {
-            using var manifestStream = File.OpenRead(expectedManifestPath);
-            manifest = JsonNode.Parse(manifestStream)!;
+            try
+            {
+                using var localManifestStream = File.OpenRead(expectedManifestPath);
+                manifest = JsonNode.Parse(localManifestStream)!;
+                return manifest;
+            }
+            catch
+            {
+                // swallow and reload from origin
+            }
         }
-        else
-        {
-            manifest = await GetManifest(name, reference);
-            using var manifestStream = File.OpenRead(expectedManifestPath);
-            var writer = new Utf8JsonWriter(manifestStream);
-            manifest.WriteTo(writer);
-        }
+        manifest = await GetManifest(name, reference);
+        Directory.CreateDirectory(Path.GetDirectoryName(expectedManifestPath)!);
+        using var manifestStream = File.Create(expectedManifestPath);
+        using var writer = new Utf8JsonWriter(manifestStream);
+        manifest.WriteTo(writer);
         return manifest;
     }
 
@@ -67,22 +73,29 @@ public record struct Registry(Uri BaseUri)
         return configDoc;
     }
 
-    private async Task<JsonNode> EnsureConfig(string name, string configSha)
+    private async Task<JsonNode> EnsureConfig(string name, string digest)
     {
-        var expectedBlobPath = ContentStore.GetPathForBlob(name, configSha);
+        var expectedBlobPath = ContentStore.GetPathForBlob(name, digest);
         JsonNode config;
         if (File.Exists(expectedBlobPath))
         {
-            using var manifestStream = File.OpenRead(expectedBlobPath);
-            config = JsonNode.Parse(manifestStream)!;
+            try
+            {
+                using var localConfigStream = File.OpenRead(expectedBlobPath);
+                config = JsonNode.Parse(localConfigStream)!;
+                return config;
+            }
+            catch
+            {
+                // swallow and continue
+            }
         }
-        else
-        {
-            config = await GetBlob(name, configSha);
-            using var manifestStream = File.OpenRead(expectedBlobPath);
-            var writer = new Utf8JsonWriter(manifestStream);
-            config.WriteTo(writer);
-        }
+
+        config = await GetBlob(name, digest);
+        Directory.CreateDirectory(Path.GetDirectoryName(expectedBlobPath)!);
+        using var configStream = File.Create(expectedBlobPath);
+        using var writer = new Utf8JsonWriter(configStream);
+        config.WriteTo(writer);
         return config;
     }
 

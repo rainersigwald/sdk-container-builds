@@ -62,7 +62,10 @@ public static class ContentStore
 
     public static string GetPathForManifest(string manifestName, string manifestReference) => Path.Combine(ManifestRoot, manifestName, manifestReference);
 
-    public static string GetPathForBlob(string blobName, string blobSha) => Path.Combine(BlobsRoot, blobName, blobSha);
+    public static string GetPathForBlob(string blobName, string digest) {
+        string contentHash = digest.Substring("sha256:".Length);
+        return Path.Combine(BlobsRoot, blobName, contentHash);
+    }
 
     public static string GetTempFile()
     {
